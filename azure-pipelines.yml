@@ -1,0 +1,58 @@
+# CI - M324
+
+trigger: 
+  branches:
+    include:
+    - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  isMaster: ${{eq(variables['Build.SourceBranch'], 'refs/heads/main')}}
+
+steps:
+- task: Maven@3
+  displayName: 'mvn (package & test)'
+  inputs:
+    mavenPomFile: 'backend/pom.xml'
+    mavenOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.17'
+    jdkArchitectureOption: 'x64'
+    publishJUnitResults: true
+    testResultsFiles: '**/TEST-*.xml'
+    goals: 'package'
+
+- task: Npm@1
+  displayName: 'npm (install)'
+  inputs:
+    command: 'install'
+    workingDir: 'frontend'
+
+- task: Npm@1
+  displayName: 'npm (run build)'
+  inputs:
+    command: 'custom'
+    workingDir: 'frontend'
+    customCommand: 'run build'
+
+- task: Docker@2
+  displayName: 'docker (Build & Publish - Frontend)'
+  inputs:
+    containerRegistry: 'Docker-Hub'
+    repository: 'lukasw01/m324-frontend'
+    command: 'buildAndPush'
+    Dockerfile: 'frontend/Dockerfile'
+    tags: 'latest'
+  condition: ${{variables.isMaster}}
+
+- task: Docker@2
+  displayName: 'docker (Build & Publish - Backend)'
+  inputs:
+    containerRegistry: 'Docker-Hub'
+    repository: 'lukasw01/m324-backend'
+    command: 'buildAndPush'
+    Dockerfile: 'backend/Dockerfile'
+    tags: 'latest'
+  condition:  ${{variables.isMaster}}

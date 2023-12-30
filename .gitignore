@@ -1,0 +1,12 @@
+# Mac
+.DS_Store
+
+# npm
+node_modules/
+
+# Java
+target/
+
+# IDE
+.idea/
+.vscode/
