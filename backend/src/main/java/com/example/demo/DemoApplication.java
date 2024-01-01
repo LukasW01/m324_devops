@@ -31,7 +31,7 @@ public class DemoApplication {
     	if (!tasks.isEmpty()) {
     		int i = 1;
     		for (Task task : tasks) {
-                System.out.println("-task "+(i++)+":"+task.getTaskdescription());
+                System.out.println("-task "+(i++)+":"+task.getDescription());
             }
     	}
 		return tasks;
@@ -39,19 +39,20 @@ public class DemoApplication {
 
     @CrossOrigin
     @PostMapping("/tasks")
-    public List<Task> addTask(@RequestBody String taskdescription) {
-    	System.out.println("API EP '/tasks': '"+taskdescription+"'");
+    public List<Task> addTask(@RequestBody String taskVal) {
+    	System.out.println("API EP '/tasks': '"+taskVal+"'");
     	ObjectMapper mapper = new ObjectMapper();
 		try {
-			Task task = mapper.readValue(taskdescription, Task.class);
+			Task task = mapper.readValue(taskVal, Task.class);
             task.setId(uniqueId());
             for (Task t : tasks) {
                 if (t.getId().equals(task.getId())) {
                     System.out.println(">>>task with ID: '" + task.getId() + "' already exists!");
                 }
             }
-            System.out.println("...adding task with ID: '" + task.getId() + "' and description: '" + task.getTaskdescription() + "'");
-            tasks.add(task);
+            System.out.println("...adding task with ID: '" + task.getId() + "' and description: '" + task.getDescription() + "'");
+
+			tasks.add(task);
 			return getTasks();
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
@@ -71,7 +72,7 @@ public class DemoApplication {
 			while (iter.hasNext()) {
 				Task t = iter.next();
 				if (t.getId().equals(task.getId())) {
-					System.out.println("...deleting task with ID: '" + task.getId() + "' and description: '" + task.getTaskdescription() + "'");
+					System.out.println("...deleting task with ID: '" + task.getId() + "' and description: '" + task.getDescription() + "'");
 					iter.remove();
 				}
 			}
@@ -92,8 +93,9 @@ public class DemoApplication {
 			while (iter.hasNext()) {
 				Task t = iter.next();
 				if (t.getId().equals(tasks.getId())) {
-					System.out.println("...editing task with ID: '" + tasks.getId() + "' and description: '" + tasks.getTaskdescription() + "'");
-					t.setTaskdescription(tasks.getTaskdescription());
+					System.out.println("...editing task with ID: '" + tasks.getId() + "' and description: '" + tasks.getDescription() + "'");
+					t.setDescription(tasks.getDescription());
+					t.setDate(tasks.getDate());
 				}
 			}
 		} catch (JsonProcessingException e) {
@@ -111,13 +113,4 @@ public class DemoApplication {
 		}
 		return id;
 	}
-
-	public void setTasks(List<Task> tasks) {
-		this.tasks = tasks;
-	}
-
-	public List<Task> getTask() {
-		return tasks;
-	}
-
 }
