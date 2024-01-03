@@ -4,6 +4,7 @@ import axios, {AxiosResponse} from 'axios';
 import * as Yup from 'yup';
 import {useFormik} from 'formik';
 import TasksTable from "./component/Table/Table";
+import {ToastHooksResult} from "@geist-ui/core/esm/use-toasts/use-toast";
 
 interface Todo {
     id: number;
@@ -13,7 +14,8 @@ interface Todo {
 
 const App: React.FC = () => {
     const [, setTodos]: [Todo[], (value: (((prevState: Todo[]) => Todo[]) | Todo[])) => void] = useState<Todo[]>([]);
-    const { setToast } = useToasts();
+    const [update, setUpdate]: [boolean, (value: (((prevState: boolean) => boolean) | boolean)) => void] = useState<boolean>(false);
+    const { setToast }: ToastHooksResult = useToasts();
 
     const validationSchema: Yup.Schema = Yup.object({
         description: Yup.string().required('Please enter a task description!').min(3, 'Task description must be at least 3 characters!').max(255, 'Task description must be at most 255 characters!'),
@@ -36,6 +38,7 @@ const App: React.FC = () => {
             }).then((response: AxiosResponse<any>): void => {
                 if (response.status === 200) {
                     setTodos(response.data);
+                    setUpdate(true);
                     setToast({ text: 'Task added successfully!', type: 'success' });
                 } else {
                     throw new Error();
@@ -70,7 +73,7 @@ const App: React.FC = () => {
                     </Fieldset.Footer>
                 </Fieldset>
             </form>
-            <TasksTable/>
+            <TasksTable update={update}/>
         </Page>
     );
 };

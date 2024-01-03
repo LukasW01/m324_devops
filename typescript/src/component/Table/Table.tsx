@@ -11,24 +11,31 @@ interface Todo {
     description: string;
     date: string | Date;
 }
-const TasksTable: React.FC = () => {
+
+interface Update {
+    update: boolean;
+}
+
+const TasksTable: React.FC<Update> = (update) => {
     const [todos, setTodos]: [Todo[], (value: (((prevState: Todo[]) => Todo[]) | Todo[])) => void] = useState<Todo[]>([]);
     const [editingTaskId, setEditingTaskId]: [number | null, (value: (((prevState: (number | null)) => (number | null)) | number | null)) => void] = useState<number | null>(null);
     const [loading, setLoading]: [boolean, (value: (((prevState: boolean) => boolean) | boolean)) => void] = useState<boolean>(true);
     const { setToast }: ToastHooksResult = useToasts();
 
     useEffect((): void => {
-        axios.get(`${window.API_URL}/task`)
-        .then((response: AxiosResponse<any>): void => {
-            if (response.status === 200) {
-                setTodos(response.data);
-                setLoading(false);
-            } else {
-                throw new Error();
-            }
-        }).catch((error) => setToast({text: `${error.message}`, type: 'error'}))
+        if(update) {
+            axios.get(`${window.API_URL}/task`)
+            .then((response: AxiosResponse<any>): void => {
+                if (response.status === 200) {
+                    setTodos(response.data);
+                    setLoading(false);
+                } else {
+                    throw new Error();
+                }
+            }).catch((error) => setToast({text: `${error.message}`, type: 'error'}))
+        }
     // eslint-disable-next-line
-    }, []);
+    }, [update]);
 
     const handleDelete = async (id: number): Promise<void> => {
         await axios.delete(`${window.API_URL}/task/delete/${id}`).then((response: AxiosResponse<any>): void => {
