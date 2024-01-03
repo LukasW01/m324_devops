@@ -15,7 +15,7 @@ RUN adduser \
 
 WORKDIR $home
 COPY . .
-RUN npm i
+RUN pnpm i
 RUN chown -R $user:$user .
 
 USER $user

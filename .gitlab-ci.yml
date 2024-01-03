@@ -1,0 +1,107 @@
+services:
+  - postgres:latest
+
+stages:
+  - maven
+  - node
+  - docker
+
+variables:
+  POSTGRES_DB: $DB
+  POSTGRES_USER: $DB_USER
+  POSTGRES_PASSWORD: $DB_PW
+  REGISTRY: ghcr.io
+
+  MAVEN_OPTS: >-
+    -Dhttps.protocols=TLSv1.2
+    -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+    -Dorg.slf4j.simpleLogger.showDateTime=true
+    -Djava.awt.headless=true
+
+  MAVEN_CLI_OPTS: >-
+    --batch-mode
+    --errors
+    --fail-at-end
+    --show-version
+    --no-transfer-progress
+
+cache:
+  paths:
+    - .m2/repository
+    - node_modules/
+    - .pnpm-store/
+  key:
+    files:
+      - pnpm-lock.yaml
+
+#sast:
+#  stage: sast
+#  allow_failure: true
+#  needs: [ ]
+#include:
+#  - template: Security/SAST.gitlab-ci.yml
+#  - template: Security/Secret-Detection.gitlab-ci.yml
+
+maven:
+  stage: maven
+  script: mvn package --file kotlin/pom.xml 
+  artifacts:
+    when: always
+    paths:
+      - kotlin/target/surefire-reports/*.xml
+      - kotlin/target/failsafe-reports/*.xml
+      - kotlin/target/*.jar
+    reports:
+      junit:
+        - kotlin/target/surefire-reports/*.xml
+        - kotlin/target/failsafe-reports/*.xml
+  image: maven:3-openjdk-17
+
+node:
+  stage: node
+  before_script:
+  - corepack enable
+  - corepack prepare pnpm@latest-8 --activate
+  - pnpm config set store-dir .pnpm-store
+  script:
+  - pnpm --prefix typescript/ i 
+  - pnpm --prefix typescript/ run build 
+  artifacts:
+    when: always
+    paths:
+      - typescript/build
+  image: node:alpine
+
+docker-build-kotlin:
+  stage: docker
+  only: 
+    - main
+  services:
+    - docker:dind
+  before_script:
+   - docker login $REGISTRY -u $REGISTRY_USER -p $REGISTRY_PASSWORD 
+  script:
+    - cd kotlin/
+    - docker build --pull -t "m324_devops_kotlin" .
+    # latest tag
+    - docker tag "m324_devops_kotlin" "$REGISTRY/$PROJECT_NAMESPACE/m324_devops_kotlin:latest"
+    - docker push "$REGISTRY/$PROJECT_NAMESPACE/m324_devops_kotlin:latest"
+  image: docker:cli
+
+
+docker-build-typescript:
+  stage: docker
+  only: 
+    - main
+  services:
+    - docker:dind
+  before_script:
+   - docker login $REGISTRY -u $REGISTRY_USER -p $REGISTRY_PASSWORD 
+  script:
+    - cd typescript/
+    - docker build --pull -t "m324_devops_typescript" .
+    # latest tag
+    - docker tag "m324_devops_typescript" "$REGISTRY/$PROJECT_NAMESPACE/m324_devops_typescript:latest"
+    - docker push "$REGISTRY/$PROJECT_NAMESPACE/m324_devops_typescript:latest"
+  image: docker:cli
+
