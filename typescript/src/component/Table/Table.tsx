@@ -1,4 +1,4 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
+import React, {ChangeEvent, useState} from 'react';
 import {Button, Input, Table, useToasts} from '@geist-ui/core';
 import {TableDataItemBase} from "@geist-ui/core/esm/table";
 import axios, {AxiosResponse} from "axios";
@@ -12,35 +12,20 @@ interface Todo {
     date: string | Date;
 }
 
-interface Update {
-    update: boolean;
+interface State {
+    todos: Todo[];
+    loading: boolean;
+    handleChange: (todo: Todo[]) => void;
 }
 
-const TasksTable: React.FC<Update> = (update) => {
-    const [todos, setTodos]: [Todo[], (value: (((prevState: Todo[]) => Todo[]) | Todo[])) => void] = useState<Todo[]>([]);
+const TasksTable: React.FC<State> = (props: State) => {
     const [editingTaskId, setEditingTaskId]: [number | null, (value: (((prevState: (number | null)) => (number | null)) | number | null)) => void] = useState<number | null>(null);
-    const [loading, setLoading]: [boolean, (value: (((prevState: boolean) => boolean) | boolean)) => void] = useState<boolean>(true);
     const { setToast }: ToastHooksResult = useToasts();
-
-    useEffect((): void => {
-        if(update) {
-            axios.get(`${window.API_URL}/task`)
-            .then((response: AxiosResponse<any>): void => {
-                if (response.status === 200) {
-                    setTodos(response.data);
-                    setLoading(false);
-                } else {
-                    throw new Error();
-                }
-            }).catch((error) => setToast({text: `${error.message}`, type: 'error'}))
-        }
-    // eslint-disable-next-line
-    }, [update]);
 
     const handleDelete = async (id: number): Promise<void> => {
         await axios.delete(`${window.API_URL}/task/delete/${id}`).then((response: AxiosResponse<any>): void => {
             if (response.status === 200) {
-                setTodos(response.data);
+                props.handleChange(response.data);
                 setEditingTaskId(null);
                 setToast({ text: 'Task deleted successfully!', type: 'success' });
             } else {
@@ -55,7 +40,7 @@ const TasksTable: React.FC<Update> = (update) => {
             date: date
         }).then((response: AxiosResponse<any>): void => {
             if (response.status === 200) {
-                setTodos(response.data);
+                props.handleChange(props.todos);
                 setEditingTaskId(null);
                 setToast({ text: 'Task edited successfully!', type: 'success' });
             } else {
@@ -65,26 +50,24 @@ const TasksTable: React.FC<Update> = (update) => {
     };
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>, id: number, property: string): void => {
-        setTodos((prevTodos: Todo[]) => {
-            return prevTodos.map((todo: Todo): Todo => {
-                if (todo.id === id) {
-                    return {...todo, [property]: event.target.value};
-                }
-                return todo;
-            });
-        });
+        props.handleChange(props.todos.map((todo: Todo): Todo => {
+            if (todo.id === id) {
+                return {...todo, [property]: event.target.value};
+            }
+            return todo;
+        }));
     };
 
     return (
         <>
-            {loading ? (
+            {props.loading ? (
                 <TableHeadLoading/>
             ) : (
-                todos.length === 0 ? (
+                props.todos.length === 0 ? (
                     <TableEmpty/>
                 ) : (
                     <>
-                        <Table data={todos!}>
+                        <Table data={props.todos!}>
                             <Table.Column label="Task" width={300} prop={"description"} render={(_value, rowData: TableDataItemBase) => (
                                 <>
                                     {editingTaskId === rowData.id ? (

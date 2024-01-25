@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Button, Code, Dot, Fieldset, Input, Page, Text, useToasts} from '@geist-ui/core';
 import axios, {AxiosResponse} from 'axios';
 import * as Yup from 'yup';
@@ -13,20 +13,37 @@ interface Todo {
 }
 
 const App: React.FC = () => {
-    const [, setTodos]: [Todo[], (value: (((prevState: Todo[]) => Todo[]) | Todo[])) => void] = useState<Todo[]>([]);
-    const [update, setUpdate]: [boolean, (value: (((prevState: boolean) => boolean) | boolean)) => void] = useState<boolean>(false);
+    const [loading, setLoading]: [boolean, (value: (((prevState: boolean) => boolean) | boolean)) => void] = useState<boolean>(true);
+    const [todos, setTodos]: [Todo[], (value: (((prevState: Todo[]) => Todo[]) | Todo[])) => void] = useState<Todo[]>([]);
     const { setToast }: ToastHooksResult = useToasts();
 
     const validationSchema: Yup.Schema = Yup.object({
         description: Yup.string().required('Please enter a task description!').min(3, 'Task description must be at least 3 characters!').max(255, 'Task description must be at most 255 characters!'),
-        date: Yup.date().required('Please enter a date!'),
+        date: Yup.date().required('Please enter a date!').min(new Date(), 'Date must be in the future!'),
     });
 
+    useEffect((): void => {
+        fetchTodos().then((r: void) => setInterval(fetchTodos, 30000));
+    }, []);
+
+    const fetchTodos = async (): Promise<void> => {
+        axios.get(`${window.API_URL}/task`)
+            .then((response: AxiosResponse<any>): void => {
+                if (response.status === 200) {
+                    setTodos(response.data);
+                    setLoading(false);
+                } else {
+                    throw new Error();
+                }
+            }).catch((error): void => { setToast({text: `Failed to fetch data.`, type: 'error'}); })
+    }
+
+    const handleChange = async (todo: Todo[]): Promise<void> => {
+        setTodos(todo);
+    }
+
     const formik= useFormik({
-        initialValues: {
-            description: "",
-            date: "",
-        },
+        initialValues: {description: "", date: "",},
         validationSchema: validationSchema,
         onSubmit: async (values: {
             description: string;
@@ -38,7 +55,6 @@ const App: React.FC = () => {
             }).then((response: AxiosResponse<any>): void => {
                 if (response.status === 200) {
                     setTodos(response.data);
-                    setUpdate(true);
                     setToast({ text: 'Task added successfully!', type: 'success' });
                 } else {
                     throw new Error();
@@ -73,7 +89,7 @@ const App: React.FC = () => {
                     </Fieldset.Footer>
                 </Fieldset>
             </form>
-            <TasksTable update={update}/>
+            <TasksTable todos={todos} loading={loading} handleChange={handleChange}/>
         </Page>
     );
 };
