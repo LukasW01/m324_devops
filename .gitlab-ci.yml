@@ -74,8 +74,6 @@ node:
 
 docker-build-kotlin:
   stage: docker
-  only: 
-    - tags
   services:
     - docker:dind
   before_script:
@@ -91,8 +89,6 @@ docker-build-kotlin:
 
 docker-build-typescript:
   stage: docker
-  only: 
-    - tags
   services:
     - docker:dind
   before_script:
