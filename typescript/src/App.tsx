@@ -24,6 +24,7 @@ const App: React.FC = () => {
 
     useEffect((): void => {
         fetchTodos().then((r: void) => setInterval(fetchTodos, 30000));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchTodos = async (): Promise<void> => {
