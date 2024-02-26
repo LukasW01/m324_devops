@@ -76,6 +76,8 @@ docker-build-kotlin:
   stage: docker
   services:
     - docker:dind
+  only:
+    - tags
   before_script:
    - docker login $REGISTRY -u $REGISTRY_USER -p $REGISTRY_PASSWORD 
   script:
@@ -91,6 +93,8 @@ docker-build-typescript:
   stage: docker
   services:
     - docker:dind
+  only:
+    - tags
   before_script:
    - docker login $REGISTRY -u $REGISTRY_USER -p $REGISTRY_PASSWORD 
   script:

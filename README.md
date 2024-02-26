@@ -20,7 +20,7 @@ Gitlab CI and Azure DevOps pipelines are configured to automate the following pr
 
 ## Learning Objectives
 
-This repository serves as a stepping stone to comprehending DevOps principles and practices:
+With this repository we were able to learn and try out the following:
 
 - Trunk-Driver Development: Learn how to implement trunk-driver development in a small team.
 - Continuous Integration and Continuous Delivery (CI/CD): Gain hands-on experience in implementing CI/CD pipelines using Gitlab CI and Azure DevOps.
